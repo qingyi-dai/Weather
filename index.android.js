@@ -12,234 +12,255 @@ import {
   View,
   TouchableHighlight,
   ScrollView,
+  DeviceEventEmitter,
+  Image,
+  TouchableOpacity,
 } from 'react-native';
+import {Navigator} from 'react-native-deprecated-custom-components';
+import Util from './view/utils';
+import Day1 from './view/day1';
+import Day2 from './view/day2';
+import Icon from 'react-native-vector-icons/Ionicons';
+import IconFA from 'react-native-vector-icons/FontAwesome';
+import Swiper from 'react-native-swiper';
 
-export default class Stopwatch extends Component {
-  constructor(props) {
-    super(props);
+export default class MainView extends Component {
+  constructor() {
+    super();
     this.state = {
-      isStart: false,
-      tenms: 0,
-      history: [{
-        times: [0, 0, 0],
-      }],
-      resetms: 0,
+      days:[{
+        key:0,
+        title:"A stopwatch",
+        component: Day1,
+        isFA: false,
+        icon: "ios-stopwatch",
+        size: 48,
+        color: "#ff856c",
+        hideNav: false,
+      },{
+        key:1,
+        title:"A weather app",
+        component: Day2,
+        isFA: false,
+        icon: "ios-partly-sunny",
+        size:60,
+        color:"#90bdc1",
+        hideNav: true,
+      }]
     }
   }
 
-  handlePress() {
-    
-    this.setState({
-      isStart: !this.state.isStart,
-    });
-
-    var intervalOne = setInterval(() => {
-      this.setState(previousState => {
-        let ms = this.state.tenms + 10;
-        return { tenms: ms, };
-      });
-      if(!this.state.isStart){
-        clearInterval(intervalOne);
-        return;
-      }
-    }, 90);
-
-    var intervalTwo = setInterval(() => {
-      this.setState(previousState => {
-        let rMs = this.state.resetms + 10;
-        return { resetms: rMs, };
-      });
-      if(!this.state.isStart){
-        clearInterval(intervalTwo);
-        return;
-      }
-    }, 90);
-    
-  }
-
-  handlePressToHistory(min, sec, count) {
-    if(this.state.isStart){
-      const time = [min, sec, count]
-      const history = this.state.history.unshift({times: time});
-      this.setState({
-        history: this.state.history,
-        resetms: 0,
-      });
-    }
-  }
-
-  handlePressToClear() {
-    this.setState({
-      tenms: 0,
-      resetms: 0,
-      history: [{
-        times: [0, 0, 0],
-      }], 
-    });
+  _jumpToDay(index){
+    this.props.navigator.push({
+      title: this.state.days[index].title,
+      index: index + 1,
+      display: !this.state.days[index].hideNav,
+      component: this.state.days[index].component,
+    })
   }
 
   render() {
-    let isStart = this.state.isStart;
-    let resetms = this.state.resetms;
-    const history = this.state.history;
-
-    let min = resetms/6000 ;
-    let sec = (resetms % 6000 ) / 100;
-    
-    let btnRecordNm = (!isStart && this.state.tenms != 0) ? '复位' : '计次';
-    let onPressEvent = btnRecordNm === '复位' ? () => this.handlePressToClear() : () => this.handlePressToHistory(min, sec, parseInt(history.length));
-    let btnStName = isStart ? '停止' : '启动';
-    let stBgColor = isStart ? '#331412' : '#19351e';
-    let stTextStyle = isStart ?  '#cf3b38' : '#72c679';
-
-    const countNum = resetms != 0 ? this.state.history.length : null;
-    let minute = resetms != 0 ? parseInt(min) + ':' : null;
-    let second = resetms != 0 ? (parseFloat(sec)).toFixed(2) : null;
-    const moves = history.map((times,num) => {
-      return (
-        <Count key={num} time={times.times} />
-      );
-    });
-
-    return (
-      <View style={styles.container}>
-        <Text style={[styles.textDefaultStyle, styles.border, styles.title,]}> 秒表 </Text>
-        <TimeDisplay time={this.state.tenms}/>
-        <View style={[styles.center, styles.btn]}>
-          <Btn btnName= {btnRecordNm}
-               btnStyle= {{ backgroundColor: '#141414', marginRight: 80,}}
-               textStyle= {{ color: '#d1d1d1', }} 
-               onPress={onPressEvent}/>
-
-          <Btn btnName= {btnStName}
-                btnStyle=  {{backgroundColor: stBgColor, marginLeft: 80,}}
-                textStyle=  {{color: stTextStyle,}}
-                onPress={() => this.handlePress()} />
-        </View>
-        
-        <ScrollView className="countList">
-          <View style={[styles.center, styles.count, styles.border,]}>
-            <Text style={[styles.textDefaultStyle, styles.countNum]}>{countNum}</Text>
-            <Text style={[styles.textDefaultStyle, styles.countTime]}>{minute}</Text>
-            <Text style={[styles.textDefaultStyle,]}>{second}</Text>
+    var onThis = this;
+    var boxs = this.state.days.map(function(elem, index) {
+      return(
+        <TouchableHighlight key={elem.key} style={[styles.touchBox, index%3==2?styles.touchBox2:styles.touchBox1]} underlayColor="#eee" onPress={()=> onThis._jumpToDay(index)}>
+          <View style={styles.boxContainer}>
+            <Text style={styles.boxText}>Day{index+1}</Text>
+            {elem.isFA? <IconFA size={elem.size} name={elem.icon} style={[styles.boxIcon,{color:elem.color}]}></IconFA>:
+              <Icon size={elem.size} name={elem.icon} style={[styles.boxIcon,{color:elem.color}]}></Icon>}
           </View>
-          {moves}
-        </ScrollView>
-      </View>
-    );
-  }
-}
-
-class TimeDisplay extends Component {
-  render() {
-    let minute = this.props.time/6000 ;
-    let second = (this.props.time % 6000 ) / 100;
-    
-    return (
-      <View style={[styles.center, styles.timeDisplay]}>
-        <Text style={[styles.textDefaultStyle, styles.timeText,]}>{parseInt(minute)}:</Text>
-        <Text style={[styles.textDefaultStyle, styles.timeText,]}>{(parseFloat(second)).toFixed(2)}</Text>
-      </View>
-    );
-  }
-}
-
-class Btn extends Component {
-
-  static propTypes = {
-    btnName: PropTypes.string,
-    btnStyle: TouchableHighlight.propTypes.style,
-    textStyle: Text.propTypes.style,
-  };
-
-  static defaultProps = {
-    btnName: 'Button',
-  };
-
-  render() {
-    return (
-      <View>
-          <TouchableHighlight
-              style={[styles.center, styles.btnDefaultStyle, this.props.btnStyle]}
-              onPress={() => this.props.onPress()} >
-              <Text style={[styles.textDefaultStyle, this.props.textStyle]}>{this.props.btnName}</Text>
-          </TouchableHighlight>
-      </View>
-    );
-  }
-}
-
-class Count extends Component {
-  render() {
-    if(this.props.time[0] === 0 && this.props.time[1] === 0){
-      return <View></View>;
-    } else {
-      return (
-        <View style={[styles.center, styles.count, styles.border, ]}>
-          <Text style={[styles.textDefaultStyle, styles.countNum]}>{this.props.time[2]}</Text>
-          <Text style={[styles.textDefaultStyle, styles.countTime]}>{parseInt(this.props.time[0])}:</Text>
-          <Text style={[styles.textDefaultStyle, ]}>{(parseFloat(this.props.time[1])).toFixed(2)}</Text>
-        </View>
+        </TouchableHighlight>
       );
+    })
+    return(
+      <ScrollView style={styles.mainView} title={this.props.title}>
+        <Swiper height={150} showsButtons={false} autoplay={true} 
+          activeDot={<View style={{backgroundColor: 'rgba(255,255,255,0.8)', width: 8, height: 8, borderRadius: 4, marginLeft: 3, marginRight: 3, marginTop: 3, marginBottom: 3,}} />}>
+          {/*<TouchableHighlight onPress={()=> onThis._jumpToDay(0)}>*/}
+            <View style={styles.slide}>
+              <Image style={styles.image} source={require("./view/img/day1.png")}></Image>
+              <Text style={styles.slideText}>Day1: Timer</Text>
+            </View>
+          {/*</TouchableHighlight>
+          <TouchableHighlight onPress={()=> onThis._jumpToDay(1)}>*/}
+            <View style={styles.slide}>
+              <Image style={styles.image} source={require("./view/img/day2.png")}></Image>
+              <Text style={styles.slideText}>Day2: Weather</Text>
+            </View>
+          {/*</TouchableHighlight>*/}
+        </Swiper>
+        <View style={styles.touchBoxContainer}>
+          {boxs}
+        </View>
+      </ScrollView>
+    );
+  }
+}
+
+class NavigationBar extends Navigator.NavigationBar {
+  render() {
+    var routes = this.props.navState.routeStack;
+
+    if (routes.length) {
+      var route = routes[routes.length - 1];
+
+      if (route.display === false) {
+        return null;
+      }
     }
+
+    return super.render();
+  }
+}
+
+class ThirtyDaysOfReactNative extends Component{
+  componentDidMount() {
+  }
+
+  configureScene(route, routeStack) {
+    if (route.type == 'Bottom') {
+      return Navigator.SceneConfigs.FloatFromBottom; 
+    }
+    return Navigator.SceneConfigs.PushFromRight;
+  }
+
+  routeMapper = {
+    LeftButton: (route, navigator, index, navState) =>
+      { 
+        if(route.index > 0) {
+          return <TouchableOpacity
+            underlayColor='transparent'
+            onPress={() => {if (index > 0) {navigator.pop()}}}>
+            <Text style={styles.navBackBtn}><Icon size={18} name="ios-arrow-back"></Icon> back</Text>
+          </TouchableOpacity>;
+        }else{
+          return null;
+        }
+      },
+    RightButton: (route, navigator, index, navState) =>
+      { return null; },
+    Title: (route, navigator, index, navState) =>
+      { return (<Text style={styles.navTitle}>{route.title}</Text>); },
+  };
+  
+  render(){
+    return (
+      <Navigator
+        initialRoute={{ 
+          title: '30 Days of RN',
+          index: 0,
+          display: true,
+          component: MainView,
+        }}
+        configureScene={this.configureScene}
+        renderScene={(route, navigator) => {
+          return <route.component navigator={navigator} title={route.title} index={route.index} />
+        }}
+        navigationBar={
+          <NavigationBar
+            routeMapper={this.routeMapper}
+            style={styles.navBar}
+          />
+        }
+      />
+    );
   }
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'flex-start',
-    alignItems: 'center',
-    backgroundColor: '#0d0d0d',
+  container:{
+    flex:1,
   },
-  textDefaultStyle: {
-    fontSize: 18,
-    color: '#d1d1d1',
-    textAlign: 'center',
-    textAlignVertical: 'center',
+  mainView: {
+    marginTop: 55
   },
-  title: {
-    width: 400,
-    height: 50,
-    color: '#fbfbfb',
-    backgroundColor: '#181818',
+  navBar: {
     borderBottomWidth: 1,
+    borderBottomColor: "#ddd",
   },
-  center: {
-    flexDirection: 'row',
-    justifyContent:'center',
-    alignItems: 'center',
+  navTitle: {
+    paddingTop: 10,
+    fontSize: 18,
+    fontWeight: "500",
   },
-  border: {
-    borderColor: '#919191',
+  navBackBtn: {
+    paddingTop: 10,
+    paddingLeft: 10,
+    fontSize: 18,
+    color: "#555",
   },
-  timeDisplay: {
-    height: 250,
+  itemWrapper:{
+    backgroundColor: "#f3f3f3"
   },
-  timeText: {
-    fontSize: 80,
-    color: '#fbfbfb',
+  touchBox:{
+    width: Util.size.width/3-0.33334,
+    height:Util.size.width/3,
+    backgroundColor:"#fff",
   },
-  btn: {
-    height: 110,
+  touchBoxContainer:{
+    flexDirection: "row", 
+    flexWrap:"wrap",
+    width: Util.size.width,
+    borderTopWidth: Util.pixel,
+    borderTopColor:"#ccc",
+    borderLeftWidth: Util.pixel,
+    borderLeftColor:"#ccc",
+    borderRightWidth: Util.pixel,
+    borderRightColor:"#ccc",
   },
-  btnDefaultStyle: {
-    width: 80,
+  touchBox1:{
+    borderBottomWidth: Util.pixel,
+    borderBottomColor:"#ccc",
+    borderRightWidth: Util.pixel,
+    borderRightColor:"#ccc",
+  },
+  touchBox2:{
+    borderBottomWidth: Util.pixel,
+    borderBottomColor:"#ccc",
+    borderLeftWidth: Util.pixel,
+    borderLeftColor:"#ccc",
+  },
+  boxContainer:{
+    alignItems:"center",
+    justifyContent:"center",
+    width: Util.size.width/3,
+    height:Util.size.width/3,
+  },
+  boxIcon:{
+    position:"relative",
+    top:-10
+  },
+  boxText:{
+    position:"absolute",
+    bottom:15,
+    width:Util.size.width/3,
+    textAlign:"center",
+    left: 0,
+    backgroundColor:"transparent"
+  },
+  slide: {
+    flex: 1,
+    height: 150,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  slideText:{
+    position:"absolute",
+    bottom: 0,
+    paddingTop:5,
+    paddingBottom:5,
+    backgroundColor:"rgba(255,255,255,0.5)",
+    width: Util.size.width,
+    textAlign:"center",
+    fontSize: 12
+  },
+  image:{
+    width: Util.size.width,
     height: 80,
-    backgroundColor: '#19351e',
-    borderRadius: 40,
-  },
-  count: {
-    borderTopWidth: 1,
-    width: 320,
-    height: 40,
-  },
-  countNum: {
-    marginRight: 110,
-  },
-  countTime: {
-    marginLeft: 110,
+    flex: 1,
+    alignSelf: "stretch",
+    resizeMode: "cover"
   }
 });
 
-AppRegistry.registerComponent('Stopwatch', () => Stopwatch);
+AppRegistry.registerComponent('Stopwatch', () => ThirtyDaysOfReactNative);
