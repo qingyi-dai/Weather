@@ -16,7 +16,8 @@ import {
   Image,
   TouchableOpacity,
 } from 'react-native';
-import {Navigator} from 'react-native-deprecated-custom-components';
+// import {Navigator} from 'react-native-deprecated-custom-components';
+import {StackNavigator} from 'react-navigation';
 import Util from './view/utils';
 import Day1 from './view/day1';
 import Day2 from './view/day2';
@@ -24,14 +25,16 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import IconFA from 'react-native-vector-icons/FontAwesome';
 import Swiper from 'react-native-swiper';
 
-export default class MainView extends Component {
+// export default class MainView extends Component {
+class MainView extends Component {
   constructor() {
     super();
     this.state = {
       days:[{
         key:0,
         title:"A stopwatch",
-        component: Day1,
+        // component: Day1,
+        component: 'Day1',
         isFA: false,
         icon: "ios-stopwatch",
         size: 48,
@@ -40,7 +43,8 @@ export default class MainView extends Component {
       },{
         key:1,
         title:"A weather app",
-        component: Day2,
+        // component: Day2,
+        component: 'Day2',
         isFA: false,
         icon: "ios-partly-sunny",
         size:60,
@@ -50,20 +54,32 @@ export default class MainView extends Component {
     }
   }
 
-  _jumpToDay(index){
-    this.props.navigator.push({
-      title: this.state.days[index].title,
-      index: index + 1,
-      display: !this.state.days[index].hideNav,
-      component: this.state.days[index].component,
-    })
-  }
+  // _jumpToDay(index){
+  //   this.props.navigator.push({
+  //     title: this.state.days[index].title,
+  //     index: index + 1,
+  //     display: !this.state.days[index].hideNav,
+  //     component: this.state.days[index].component,
+  //   })
+  // }
+
+  // static navigationOptions = {
+  //   header: (navigation) => ({
+  //     visible: false,
+  //   }),
+  // };
 
   render() {
+    const { navigate } = this.props.navigation;
     var onThis = this;
     var boxs = this.state.days.map(function(elem, index) {
       return(
-        <TouchableHighlight key={elem.key} style={[styles.touchBox, index%3==2?styles.touchBox2:styles.touchBox1]} underlayColor="#eee" onPress={()=> onThis._jumpToDay(index)}>
+        <TouchableHighlight key={elem.key} style={[styles.touchBox, index%3==2?styles.touchBox2:styles.touchBox1]}
+                            underlayColor="#eee"
+                             onPress={()=> 
+                              // onThis._jumpToDay(index)
+                              navigate(elem.component, { display: !elem.hideNav, header: null})
+                            }>
           <View style={styles.boxContainer}>
             <Text style={styles.boxText}>Day{index+1}</Text>
             {elem.isFA? <IconFA size={elem.size} name={elem.icon} style={[styles.boxIcon,{color:elem.color}]}></IconFA>:
@@ -97,72 +113,85 @@ export default class MainView extends Component {
   }
 }
 
-class NavigationBar extends Navigator.NavigationBar {
-  render() {
-    var routes = this.props.navState.routeStack;
+// class NavigationBar extends Navigator.NavigationBar {
+//   render() {
+//     var routes = this.props.navState.routeStack;
 
-    if (routes.length) {
-      var route = routes[routes.length - 1];
+//     if (routes.length) {
+//       var route = routes[routes.length - 1];
 
-      if (route.display === false) {
-        return null;
-      }
-    }
+//       if (route.display === false) {
+//         return null;
+//       }
+//     }
 
-    return super.render();
-  }
-}
+//     return super.render();
+//   }
+// }
 
-class ThirtyDaysOfReactNative extends Component{
-  componentDidMount() {
-  }
+const App = StackNavigator({
+  Main: {screen: MainView},
+  Day1: {screen: Day1},
+  Day2: {screen: Day2},
+}, {
+  // navigationOptions: {
+  //   header: null
+  // },
+  headerMode: 'none',
+});
 
-  configureScene(route, routeStack) {
-    if (route.type == 'Bottom') {
-      return Navigator.SceneConfigs.FloatFromBottom; 
-    }
-    return Navigator.SceneConfigs.PushFromRight;
-  }
+// class ThirtyDaysOfReactNative extends Component{
+export default class ThirtyDaysOfReactNative extends Component{
+  // componentDidMount() {
+  // }
 
-  routeMapper = {
-    LeftButton: (route, navigator, index, navState) =>
-      { 
-        if(route.index > 0) {
-          return <TouchableOpacity
-            underlayColor='transparent'
-            onPress={() => {if (index > 0) {navigator.pop()}}}>
-            <Text style={styles.navBackBtn}><Icon size={18} name="ios-arrow-back"></Icon> back</Text>
-          </TouchableOpacity>;
-        }else{
-          return null;
-        }
-      },
-    RightButton: (route, navigator, index, navState) =>
-      { return null; },
-    Title: (route, navigator, index, navState) =>
-      { return (<Text style={styles.navTitle}>{route.title}</Text>); },
-  };
+  // configureScene(route, routeStack) {
+  //   if (route.type == 'Bottom') {
+  //     return Navigator.SceneConfigs.FloatFromBottom; 
+  //   }
+  //   return Navigator.SceneConfigs.PushFromRight;
+  // }
+
+  // routeMapper = {
+  //   LeftButton: (route, navigator, index, navState) =>
+  //     { 
+  //       if(route.index > 0) {
+  //         return <TouchableOpacity
+  //           underlayColor='transparent'
+  //           onPress={() => {if (index > 0) {navigator.pop()}}}>
+  //           <Text style={styles.navBackBtn}><Icon size={18} name="ios-arrow-back"></Icon> back</Text>
+  //         </TouchableOpacity>;
+  //       }else{
+  //         return null;
+  //       }
+  //     },
+  //   RightButton: (route, navigator, index, navState) =>
+  //     { return null; },
+  //   Title: (route, navigator, index, navState) =>
+  //     { return (<Text style={styles.navTitle}>{route.title}</Text>); },
+  // };
   
   render(){
     return (
-      <Navigator
-        initialRoute={{ 
-          title: '30 Days of RN',
-          index: 0,
-          display: true,
-          component: MainView,
-        }}
-        configureScene={this.configureScene}
-        renderScene={(route, navigator) => {
-          return <route.component navigator={navigator} title={route.title} index={route.index} />
-        }}
-        navigationBar={
-          <NavigationBar
-            routeMapper={this.routeMapper}
-            style={styles.navBar}
-          />
-        }
-      />
+      // <Navigator
+        // initialRoute={{ 
+        //   title: '30 Days of RN',
+        //   index: 0,
+        //   display: true,
+        //   component: MainView,
+        // }}
+        // configureScene={this.configureScene}
+        // renderScene={(route, navigator) => {
+        //   return <route.component navigator={navigator} title={route.title} index={route.index} />
+        // }}
+        // navigationBar={
+        //   <NavigationBar
+        //     routeMapper={this.routeMapper}
+        //     style={styles.navBar}
+        //   />
+        // }
+      // />
+      <App />
     );
   }
 }
